@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 
+// URL base de la API del challenge
 const BASE_URL =
   "https://botfilter-h5ddh6dye8exb7ha.centralus-01.azurewebsites.net";
 
-// ─── Hook: datos del candidato ────────────────────────────────────────────────
+// Traigo los datos del candidato usando el email
+// Lo separo en un hook para no mezclar lógica con la UI
 function useCandidate(email) {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,20 +15,25 @@ function useCandidate(email) {
     if (!email) return;
     setLoading(true);
     setError(null);
-    fetch(`${BASE_URL}/api/candidate/get-by-email?email=${encodeURIComponent(email)}`)
+
+    fetch(
+      `${BASE_URL}/api/candidate/get-by-email?email=${encodeURIComponent(email)}`
+    )
       .then((res) => {
         if (!res.ok) return res.json().then((d) => Promise.reject(d));
         return res.json();
       })
       .then((data) => setCandidate(data))
-      .catch((err) => setError(err?.message || "No se pudieron cargar los datos del candidato."))
+      .catch((err) =>
+        setError(err?.message || "No se pudieron cargar los datos del candidato.")
+      )
       .finally(() => setLoading(false));
   }, [email]);
 
   return { candidate, loading, error };
 }
 
-// ─── Hook: lista de posiciones ────────────────────────────────────────────────
+// Hook para traer la lista de posiciones disponibles
 function useJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,28 +46,33 @@ function useJobs() {
         return res.json();
       })
       .then((data) => setJobs(data))
-      .catch((err) => setError(err?.message || "No se pudieron cargar las posiciones."))
+      .catch((err) =>
+        setError(err?.message || "No se pudieron cargar las posiciones.")
+      )
       .finally(() => setLoading(false));
   }, []);
 
   return { jobs, loading, error };
 }
 
-// ─── Componente: tarjeta de cada posición ────────────────────────────────────
+// Cada posición es una card independiente con su propio estado
+// Así si hay varias posiciones, cada una maneja su submit por separado
 function JobCard({ job, candidate }) {
   const [repoUrl, setRepoUrl] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
+    // Valido antes de hacer el POST
     if (!candidate) {
       setStatus("error");
       setMessage("Los datos del candidato aún no cargaron. Esperá un momento.");
       return;
     }
+
     if (!repoUrl.startsWith("https://github.com/")) {
       setStatus("error");
-      setMessage("Ingresá una URL válida de GitHub (https://github.com/...)");
+      setMessage("Ingresá una URL válida de GitHub.");
       return;
     }
 
@@ -81,10 +93,12 @@ function JobCard({ job, candidate }) {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data?.message || `Error del servidor: ${res.status}`);
+      // Si la respuesta no es ok, tiro el mensaje que manda la API
+      if (!res.ok) throw new Error(data?.message || `Error ${res.status}`);
+
       if (data?.ok) {
         setStatus("success");
-        setMessage("¡Postulación enviada con éxito! 🎉");
+        setMessage("¡Postulación enviada! 🎉");
       } else {
         throw new Error(data?.message || "Respuesta inesperada del servidor.");
       }
@@ -106,6 +120,7 @@ function JobCard({ job, candidate }) {
         <label style={styles.label} htmlFor={`repo-${job.id}`}>
           URL del repositorio en GitHub
         </label>
+
         <div style={styles.inputRow}>
           <input
             id={`repo-${job.id}`}
@@ -119,26 +134,47 @@ function JobCard({ job, candidate }) {
             value={repoUrl}
             onChange={(e) => {
               setRepoUrl(e.target.value);
-              if (status !== "idle") { setStatus("idle"); setMessage(""); }
+              // Limpio el error cuando el usuario empieza a escribir de nuevo
+              if (status !== "idle") {
+                setStatus("idle");
+                setMessage("");
+              }
             }}
             disabled={status === "loading" || status === "success"}
           />
+
           <button
             style={{
               ...styles.button,
               ...(status === "success" ? styles.buttonSuccess : {}),
-              ...(status === "loading" || status === "success" || !repoUrl.trim()
-                ? styles.buttonDisabled : {}),
+              ...(status === "loading" ||
+              status === "success" ||
+              !repoUrl.trim()
+                ? styles.buttonDisabled
+                : {}),
             }}
             onClick={handleSubmit}
-            disabled={status === "loading" || status === "success" || !repoUrl.trim()}
+            disabled={
+              status === "loading" || status === "success" || !repoUrl.trim()
+            }
           >
-            {status === "loading" ? "Enviando..." : status === "success" ? "✓ Enviado" : "Submit"}
+            {status === "loading"
+              ? "Enviando..."
+              : status === "success"
+              ? "✓ Enviado"
+              : "Submit"}
           </button>
         </div>
 
+        {/* Muestro feedback solo cuando hay algo que decirle al usuario */}
         {message && (
-          <p style={status === "success" ? styles.feedbackSuccess : styles.feedbackError}>
+          <p
+            style={
+              status === "success"
+                ? styles.feedbackSuccess
+                : styles.feedbackError
+            }
+          >
             {message}
           </p>
         )}
@@ -147,38 +183,48 @@ function JobCard({ job, candidate }) {
   );
 }
 
-// ─── App principal ────────────────────────────────────────────────────────────
 export default function App() {
+  // Mi email para traer los datos del candidato desde la API
   const EMAIL = "danielahomobono81@gmail.com";
 
-  const { candidate, loading: candLoading, error: candError } = useCandidate(EMAIL);
+  const { candidate, loading: candLoading, error: candError } =
+    useCandidate(EMAIL);
   const { jobs, loading: jobsLoading, error: jobsError } = useJobs();
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
-
         {/* Header */}
         <header style={styles.header}>
           <p style={styles.eyebrow}>Nimble Gravity · Challenge</p>
-          <h1 style={styles.title}>Posiciones <span style={styles.accent}>abiertas</span></h1>
+          <h1 style={styles.title}>
+            Posiciones <span style={styles.accent}>abiertas</span>
+          </h1>
           <p style={styles.subtitle}>
             Seleccioná la posición, ingresá tu repo de GitHub y hacé Submit.
           </p>
         </header>
 
-        {/* Estado del candidato */}
-        {candLoading && <div style={styles.pill}>⏳ Cargando datos del candidato...</div>}
-        {candError && <div style={{ ...styles.pill, ...styles.pillError }}>⚠ {candError}</div>}
+        {/* Info del candidato */}
+        {candLoading && (
+          <div style={styles.pill}>⏳ Cargando datos del candidato...</div>
+        )}
+        {candError && (
+          <div style={{ ...styles.pill, ...styles.pillError }}>
+            ⚠ {candError}
+          </div>
+        )}
         {candidate && (
           <div style={styles.pill}>
             <span style={styles.dot} />
-            <strong>{candidate.firstName} {candidate.lastName}</strong>
+            <strong>
+              {candidate.firstName} {candidate.lastName}
+            </strong>
             <span style={styles.pillEmail}>{candidate.email}</span>
           </div>
         )}
 
-        {/* Sección de posiciones */}
+        {/* Lista de posiciones */}
         <div style={styles.sectionHeader}>
           <span style={styles.sectionLabel}>Posiciones disponibles</span>
           {!jobsLoading && !jobsError && (
@@ -186,6 +232,7 @@ export default function App() {
           )}
         </div>
 
+        {/* Skeleton mientras carga */}
         {jobsLoading && (
           <>
             <div style={styles.skeleton} />
@@ -208,9 +255,10 @@ export default function App() {
           </div>
         )}
 
-        {!jobsLoading && jobs.map((job) => (
-          <JobCard key={job.id} job={job} candidate={candidate} />
-        ))}
+        {!jobsLoading &&
+          jobs.map((job) => (
+            <JobCard key={job.id} job={job} candidate={candidate} />
+          ))}
 
         <footer style={styles.footer}>
           Daniela Homobono · Nimble Gravity Challenge · {new Date().getFullYear()}
@@ -220,7 +268,7 @@ export default function App() {
   );
 }
 
-// ─── Estilos ──────────────────────────────────────────────────────────────────
+// Todos los estilos juntos al final para tener el componente más limpio arriba
 const styles = {
   page: {
     minHeight: "100vh",
@@ -263,9 +311,14 @@ const styles = {
     fontSize: "13px",
   },
   pillError: { borderColor: "#f04a4a", color: "#f04a4a" },
-  pillEmail: { color: "#6b7595", fontSize: "12px", fontFamily: "monospace" },
+  pillEmail: {
+    color: "#6b7595",
+    fontSize: "12px",
+    fontFamily: "monospace",
+  },
   dot: {
-    width: "8px", height: "8px",
+    width: "8px",
+    height: "8px",
     borderRadius: "50%",
     background: "#22c55e",
     flexShrink: 0,
@@ -277,7 +330,12 @@ const styles = {
     justifyContent: "space-between",
     marginBottom: "16px",
   },
-  sectionLabel: { fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", color: "#6b7595" },
+  sectionLabel: {
+    fontSize: "11px",
+    letterSpacing: "2px",
+    textTransform: "uppercase",
+    color: "#6b7595",
+  },
   count: {
     fontSize: "12px",
     background: "#1e2d54",
@@ -307,7 +365,12 @@ const styles = {
     padding: "3px 10px",
     marginBottom: "10px",
   },
-  cardTitle: { fontSize: "22px", fontWeight: "700", letterSpacing: "-0.5px", marginBottom: "4px" },
+  cardTitle: {
+    fontSize: "22px",
+    fontWeight: "700",
+    letterSpacing: "-0.5px",
+    marginBottom: "4px",
+  },
   cardId: { fontSize: "11px", color: "#6b7595", fontFamily: "monospace" },
 
   label: {
@@ -350,18 +413,27 @@ const styles = {
   buttonDisabled: { opacity: 0.5, cursor: "not-allowed" },
 
   feedbackSuccess: {
-    marginTop: "10px", fontSize: "13px", color: "#22c55e",
-    background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.2)",
-    borderRadius: "6px", padding: "8px 12px",
+    marginTop: "10px",
+    fontSize: "13px",
+    color: "#22c55e",
+    background: "rgba(34,197,94,0.07)",
+    border: "1px solid rgba(34,197,94,0.2)",
+    borderRadius: "6px",
+    padding: "8px 12px",
   },
   feedbackError: {
-    marginTop: "10px", fontSize: "13px", color: "#f04a4a",
-    background: "rgba(240,74,74,0.07)", border: "1px solid rgba(240,74,74,0.2)",
-    borderRadius: "6px", padding: "8px 12px",
+    marginTop: "10px",
+    fontSize: "13px",
+    color: "#f04a4a",
+    background: "rgba(240,74,74,0.07)",
+    border: "1px solid rgba(240,74,74,0.2)",
+    borderRadius: "6px",
+    padding: "8px 12px",
   },
 
   skeleton: {
-    background: "linear-gradient(90deg, #13161e 25%, #1f2433 50%, #13161e 75%)",
+    background:
+      "linear-gradient(90deg, #13161e 25%, #1f2433 50%, #13161e 75%)",
     backgroundSize: "200% 100%",
     borderRadius: "12px",
     height: "140px",
@@ -369,18 +441,24 @@ const styles = {
   },
 
   stateBox: {
-    background: "#13161e", border: "1px solid #1f2433",
-    borderRadius: "12px", padding: "48px", textAlign: "center",
+    background: "#13161e",
+    border: "1px solid #1f2433",
+    borderRadius: "12px",
+    padding: "48px",
+    textAlign: "center",
   },
   stateIcon: { fontSize: "32px", marginBottom: "12px" },
   stateTitle: { fontSize: "17px", fontWeight: "600", marginBottom: "6px" },
   stateDesc: { fontSize: "13px", color: "#6b7595", fontFamily: "monospace" },
 
   footer: {
-    marginTop: "64px", paddingTop: "24px",
+    marginTop: "64px",
+    paddingTop: "24px",
     borderTop: "1px solid #1f2433",
-    fontSize: "11px", color: "#6b7595",
-    textAlign: "center", letterSpacing: "1px",
+    fontSize: "11px",
+    color: "#6b7595",
+    textAlign: "center",
+    letterSpacing: "1px",
     fontFamily: "monospace",
   },
 };
