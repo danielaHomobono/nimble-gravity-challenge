@@ -84,11 +84,12 @@ function JobCard({ job, candidate }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          uuid: candidate.uuid,
-          jobId: job.id,
-          candidateId: candidate.candidateId,
-          repoUrl,
-        }),
+  uuid: candidate.uuid,
+  jobId: job.id,
+  candidateId: candidate.candidateId,
+  applicationId: candidate.applicationId,
+  repoUrl,
+}),
       });
 
       const data = await res.json();
@@ -207,11 +208,11 @@ export default function App() {
 
         {/* Info del candidato */}
         {candLoading && (
-          <div style={styles.pill}>⏳ Cargando datos del candidato...</div>
+          <div style={styles.pill}> Cargando datos del candidato...</div>
         )}
         {candError && (
           <div style={{ ...styles.pill, ...styles.pillError }}>
-            ⚠ {candError}
+             {candError}
           </div>
         )}
         {candidate && (
