@@ -63,7 +63,6 @@ function JobCard({ job, candidate }) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
-    // Valido antes de hacer el POST
     if (!candidate) {
       setStatus("error");
       setMessage("Los datos del candidato aún no cargaron. Esperá un momento.");
@@ -84,35 +83,35 @@ function JobCard({ job, candidate }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-  uuid: candidate.uuid,
-  jobId: job.id,
-  candidateId: candidate.candidateId,
-  applicationId: candidate.applicationId,
-  repoUrl,
-}),
+          uuid: candidate.uuid,
+          jobId: job.id,
+          candidateId: candidate.candidateId,
+          applicationId: candidate.applicationId,
+          repoUrl,
+        }),
       });
 
       const data = await res.json();
 
-      // Si la respuesta no es ok, tiro el mensaje que manda la API
+      // Si la respuesta no es ok, muestro el mensaje que devuelve la API
       if (!res.ok) throw new Error(data?.message || `Error ${res.status}`);
 
       if (data?.ok) {
         setStatus("success");
-        setMessage("¡Postulación enviada! 🎉");
+        setMessage("Postulacion enviada con exito!");
       } else {
         throw new Error(data?.message || "Respuesta inesperada del servidor.");
       }
     } catch (err) {
       setStatus("error");
-      setMessage(err.message || "Algo salió mal. Intentá de nuevo.");
+      setMessage(err.message || "Algo salio mal. Intenta de nuevo.");
     }
   };
 
   return (
     <article style={styles.card}>
       <div style={styles.cardHeader}>
-        <span style={styles.tag}>Posición abierta</span>
+        <span style={styles.tag}>Posicion abierta</span>
         <h2 style={styles.cardTitle}>{job.title}</h2>
         <p style={styles.cardId}>ID: {job.id}</p>
       </div>
@@ -128,14 +127,14 @@ function JobCard({ job, candidate }) {
             type="url"
             style={{
               ...styles.input,
-              ...(status === "error" ? styles.inputError : {}),
-              ...(status === "success" ? styles.inputSuccess : {}),
+              ...(status === "error" ? { borderColor: "#ff6b6b" } : {}),
+              ...(status === "success" ? { borderColor: "#51cf66" } : {}),
             }}
             placeholder="https://github.com/tu-usuario/tu-repo"
             value={repoUrl}
             onChange={(e) => {
               setRepoUrl(e.target.value);
-              // Limpio el error cuando el usuario empieza a escribir de nuevo
+              // Limpio el mensaje cuando el usuario empieza a escribir de nuevo
               if (status !== "idle") {
                 setStatus("idle");
                 setMessage("");
@@ -148,9 +147,7 @@ function JobCard({ job, candidate }) {
             style={{
               ...styles.button,
               ...(status === "success" ? styles.buttonSuccess : {}),
-              ...(status === "loading" ||
-              status === "success" ||
-              !repoUrl.trim()
+              ...(status === "loading" || status === "success" || !repoUrl.trim()
                 ? styles.buttonDisabled
                 : {}),
             }}
@@ -162,18 +159,16 @@ function JobCard({ job, candidate }) {
             {status === "loading"
               ? "Enviando..."
               : status === "success"
-              ? "✓ Enviado"
+              ? "Enviado"
               : "Submit"}
           </button>
         </div>
 
-        {/* Muestro feedback solo cuando hay algo que decirle al usuario */}
+        {/* Feedback visible solo cuando hay algo que mostrar */}
         {message && (
           <p
             style={
-              status === "success"
-                ? styles.feedbackSuccess
-                : styles.feedbackError
+              status === "success" ? styles.feedbackSuccess : styles.feedbackError
             }
           >
             {message}
@@ -185,7 +180,6 @@ function JobCard({ job, candidate }) {
 }
 
 export default function App() {
-  // Mi email para traer los datos del candidato desde la API
   const EMAIL = "danielahomobono81@gmail.com";
 
   const { candidate, loading: candLoading, error: candError } =
@@ -195,24 +189,24 @@ export default function App() {
   return (
     <div style={styles.page}>
       <div style={styles.container}>
-        {/* Header */}
+
         <header style={styles.header}>
           <p style={styles.eyebrow}>Nimble Gravity · Challenge</p>
           <h1 style={styles.title}>
             Posiciones <span style={styles.accent}>abiertas</span>
           </h1>
           <p style={styles.subtitle}>
-            Seleccioná la posición, ingresá tu repo de GitHub y hacé Submit.
+            Selecciona la posicion, ingresa tu repo de GitHub y hace Submit.
           </p>
         </header>
 
-        {/* Info del candidato */}
+        {/* Estado del candidato */}
         {candLoading && (
-          <div style={styles.pill}> Cargando datos del candidato...</div>
+          <div style={styles.pill}>Cargando datos del candidato...</div>
         )}
         {candError && (
-          <div style={{ ...styles.pill, ...styles.pillError }}>
-             {candError}
+          <div style={{ ...styles.pill, borderColor: "#ff6b6b", color: "#ff6b6b" }}>
+            {candError}
           </div>
         )}
         {candidate && (
@@ -225,7 +219,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Lista de posiciones */}
+        {/* Encabezado de la sección */}
         <div style={styles.sectionHeader}>
           <span style={styles.sectionLabel}>Posiciones disponibles</span>
           {!jobsLoading && !jobsError && (
@@ -233,7 +227,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Skeleton mientras carga */}
+        {/* Skeleton mientras carga la lista */}
         {jobsLoading && (
           <>
             <div style={styles.skeleton} />
@@ -243,7 +237,6 @@ export default function App() {
 
         {jobsError && (
           <div style={styles.stateBox}>
-            <p style={styles.stateIcon}>⚠️</p>
             <p style={styles.stateTitle}>No se pudieron cargar las posiciones</p>
             <p style={styles.stateDesc}>{jobsError}</p>
           </div>
@@ -251,7 +244,6 @@ export default function App() {
 
         {!jobsLoading && !jobsError && jobs.length === 0 && (
           <div style={styles.stateBox}>
-            <p style={styles.stateIcon}>📭</p>
             <p style={styles.stateTitle}>No hay posiciones disponibles</p>
           </div>
         )}
@@ -269,13 +261,13 @@ export default function App() {
   );
 }
 
-// Todos los estilos juntos al final para tener el componente más limpio arriba
+// Estilos al final para mantener el componente limpio arriba
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0b0d11",
-    color: "#e8ecf4",
-    fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif",
+    background: "#0f1117",
+    color: "#eaeaea",
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
     padding: "0 16px",
   },
   container: {
@@ -288,7 +280,7 @@ const styles = {
     fontSize: "11px",
     letterSpacing: "3px",
     textTransform: "uppercase",
-    color: "#5b8af7",
+    color: "#51cf66",
     marginBottom: "12px",
   },
   title: {
@@ -297,23 +289,22 @@ const styles = {
     letterSpacing: "-1px",
     marginBottom: "10px",
   },
-  accent: { color: "#5b8af7" },
-  subtitle: { color: "#6b7595", fontSize: "15px", lineHeight: "1.6" },
+  accent: { color: "#51cf66" },
+  subtitle: { color: "#868e96", fontSize: "15px", lineHeight: "1.6" },
 
   pill: {
     display: "inline-flex",
     alignItems: "center",
     gap: "10px",
-    background: "#13161e",
-    border: "1px solid #1f2433",
+    background: "#1a1d27",
+    border: "1px solid #2c2f3e",
     borderRadius: "999px",
-    padding: "8px 16px",
+    padding: "8px 18px",
     marginBottom: "36px",
     fontSize: "13px",
   },
-  pillError: { borderColor: "#f04a4a", color: "#f04a4a" },
   pillEmail: {
-    color: "#6b7595",
+    color: "#868e96",
     fontSize: "12px",
     fontFamily: "monospace",
   },
@@ -321,7 +312,7 @@ const styles = {
     width: "8px",
     height: "8px",
     borderRadius: "50%",
-    background: "#22c55e",
+    background: "#51cf66",
     flexShrink: 0,
   },
 
@@ -335,20 +326,20 @@ const styles = {
     fontSize: "11px",
     letterSpacing: "2px",
     textTransform: "uppercase",
-    color: "#6b7595",
+    color: "#868e96",
   },
   count: {
     fontSize: "12px",
-    background: "#1e2d54",
-    color: "#5b8af7",
+    background: "#1a2e1a",
+    color: "#51cf66",
     borderRadius: "4px",
     padding: "2px 8px",
     fontFamily: "monospace",
   },
 
   card: {
-    background: "#13161e",
-    border: "1px solid #1f2433",
+    background: "#1a1d27",
+    border: "1px solid #2c2f3e",
     borderRadius: "12px",
     padding: "28px",
     marginBottom: "16px",
@@ -359,9 +350,9 @@ const styles = {
     fontSize: "10px",
     letterSpacing: "2px",
     textTransform: "uppercase",
-    color: "#22c55e",
-    background: "rgba(34,197,94,0.08)",
-    border: "1px solid rgba(34,197,94,0.2)",
+    color: "#51cf66",
+    background: "rgba(81,207,102,0.08)",
+    border: "1px solid rgba(81,207,102,0.25)",
     borderRadius: "4px",
     padding: "3px 10px",
     marginBottom: "10px",
@@ -372,69 +363,70 @@ const styles = {
     letterSpacing: "-0.5px",
     marginBottom: "4px",
   },
-  cardId: { fontSize: "11px", color: "#6b7595", fontFamily: "monospace" },
+  cardId: { fontSize: "11px", color: "#868e96", fontFamily: "monospace" },
 
   label: {
     display: "block",
     fontSize: "12px",
     fontWeight: "600",
     letterSpacing: "0.5px",
-    color: "#6b7595",
+    color: "#868e96",
     textTransform: "uppercase",
     marginBottom: "8px",
   },
   inputRow: { display: "flex", gap: "10px" },
   input: {
     flex: 1,
-    background: "#0b0d11",
-    border: "1px solid #1f2433",
+    background: "#0f1117",
+    border: "1px solid #2c2f3e",
     borderRadius: "8px",
-    color: "#e8ecf4",
+    color: "#eaeaea",
     fontFamily: "monospace",
     fontSize: "13px",
     padding: "12px 14px",
     outline: "none",
   },
-  inputError: { borderColor: "#f04a4a" },
-  inputSuccess: { borderColor: "#22c55e" },
 
   button: {
-    background: "#5b8af7",
-    color: "#fff",
+    background: "#51cf66",
+    color: "#0f1117",
     border: "none",
     borderRadius: "8px",
     fontSize: "14px",
-    fontWeight: "600",
+    fontWeight: "700",
     padding: "12px 22px",
     cursor: "pointer",
     whiteSpace: "nowrap",
     minWidth: "100px",
   },
-  buttonSuccess: { background: "#22c55e" },
-  buttonDisabled: { opacity: 0.5, cursor: "not-allowed" },
+  buttonSuccess: {
+    background: "#2f9e44",
+    color: "#fff",
+  },
+  buttonDisabled: { opacity: 0.4, cursor: "not-allowed" },
 
   feedbackSuccess: {
     marginTop: "10px",
     fontSize: "13px",
-    color: "#22c55e",
-    background: "rgba(34,197,94,0.07)",
-    border: "1px solid rgba(34,197,94,0.2)",
+    color: "#51cf66",
+    background: "rgba(81,207,102,0.07)",
+    border: "1px solid rgba(81,207,102,0.2)",
     borderRadius: "6px",
     padding: "8px 12px",
   },
   feedbackError: {
     marginTop: "10px",
     fontSize: "13px",
-    color: "#f04a4a",
-    background: "rgba(240,74,74,0.07)",
-    border: "1px solid rgba(240,74,74,0.2)",
+    color: "#ff6b6b",
+    background: "rgba(255,107,107,0.07)",
+    border: "1px solid rgba(255,107,107,0.2)",
     borderRadius: "6px",
     padding: "8px 12px",
   },
 
   skeleton: {
     background:
-      "linear-gradient(90deg, #13161e 25%, #1f2433 50%, #13161e 75%)",
+      "linear-gradient(90deg, #1a1d27 25%, #2c2f3e 50%, #1a1d27 75%)",
     backgroundSize: "200% 100%",
     borderRadius: "12px",
     height: "140px",
@@ -442,22 +434,21 @@ const styles = {
   },
 
   stateBox: {
-    background: "#13161e",
-    border: "1px solid #1f2433",
+    background: "#1a1d27",
+    border: "1px solid #2c2f3e",
     borderRadius: "12px",
     padding: "48px",
     textAlign: "center",
   },
-  stateIcon: { fontSize: "32px", marginBottom: "12px" },
   stateTitle: { fontSize: "17px", fontWeight: "600", marginBottom: "6px" },
-  stateDesc: { fontSize: "13px", color: "#6b7595", fontFamily: "monospace" },
+  stateDesc: { fontSize: "13px", color: "#868e96", fontFamily: "monospace" },
 
   footer: {
     marginTop: "64px",
     paddingTop: "24px",
-    borderTop: "1px solid #1f2433",
+    borderTop: "1px solid #2c2f3e",
     fontSize: "11px",
-    color: "#6b7595",
+    color: "#868e96",
     textAlign: "center",
     letterSpacing: "1px",
     fontFamily: "monospace",
